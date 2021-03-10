@@ -1,5 +1,5 @@
 import axios from "axios"
-import { existsSync, mkdirSync, writeFile } from "fs"
+import { createWriteStream, existsSync, mkdirSync, writeFile } from "fs"
 import { GoogleSpreadsheet } from "google-spreadsheet"
 import { resolve, extname } from "path"
 import { v4 as uuid } from "uuid"
@@ -37,22 +37,22 @@ if (!existsSync(imagesDir)) {
     axios.request({
       method: "get",
       url: cell.value.toString(),
-      responseType: "blob"
+      responseType: "stream"
     }).then(((response) => {
 
       ((response, cellNo, imageUrl) => {
         const imagePthToWrite = uuid().toString()
         const imageExt = extname(imageUrl.reverse()[0])
         // `-${imagesDir}/${imageUrl[imageUrl.length - 1]}`
-        const writer = writeFile(`${imagesDir}/${imagePthToWrite}${imageExt}`, response.data, async () => {
+        const writer = createWriteStream(`${imagesDir}/${imagePthToWrite}${imageExt}`)
+        response.data.pipe(writer)
+        writer.on("close", async () => {
           await sheet.loadCells("L2:L" + sheet.rowCount)
           const cCell = sheet.getCellByA1("L" + cellNo)
           cCell.value = "https://tools.nitroxis.com/images/images/" + imagePthToWrite + imageExt
           await cCell.save()
         })
       })(response, cellNo, imageUrl)
-      // response.data.pipe(writer)
-      // return finished(writer)
     }))
   }
 }())
