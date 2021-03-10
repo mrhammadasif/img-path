@@ -1,0 +1,18 @@
+{
+  "compileOnSave": true,
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "noImplicitAny": false,
+    "noEmitOnError": false,
+    "sourceMap": true,
+    "rootDir": "./src",
+    "outDir": "dist",
+    "lib": ["esnext"],
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "target": "ES2015"
+  },
+  "exclude": ["node_modules", "dist", "**/*.spec.ts"]
+}
