@@ -19,12 +19,6 @@ if (!existsSync(imagesDir)) {
     private_key: process.env.GOOGLE_PRIVATE_KEY
   })
 
-  await doc.loadInfo()
-  console.log(doc.title)
-  // await doc.updateProperties({
-  //   title: "renamed doc"
-  // })
-
   const sheet = doc.sheetsByIndex[0] // or use doc.sheetsById[id] or doc.sheetsByTitle[title]
   console.log(sheet.title)
   console.log(sheet.rowCount)
@@ -41,6 +35,9 @@ if (!existsSync(imagesDir)) {
   for (let cellNo = 2; cellNo <= nos; cellNo ++) {
 
     const cell = sheet.getCellByA1(`K${cellNo}`)
+    if (!cell.value) {
+      continue
+    }
     const imageUrl = cell.value.toString().split("/")
     const response = await axios.request({
       method: "get",
