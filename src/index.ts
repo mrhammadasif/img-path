@@ -4,6 +4,7 @@ import { GoogleSpreadsheet } from "google-spreadsheet"
 import { resolve, extname } from "path"
 import { v4 as uuid } from "uuid"
 require("dotenv").config()
+import progress from "progress"
 
 const doc = new GoogleSpreadsheet(process.env.SHEET_KEY)
 const imagesDir = resolve(__dirname, "../images")
@@ -32,10 +33,14 @@ if (!existsSync(imagesDir)) {
   await sheet.loadCells("L2:L" + sheet.rowCount)
   console.log("Loaded L:L Cells...")
 
-  for (let cellNo = 2; cellNo <= sheet.rowCount; cellNo ++) {
+  const nos = sheet.rowCount
+  const bar = new progress("processed :current out of :total images [:bar] total :percent elapsed::elapsed", {
+    total: nos,
+    curr: 1
+  })
+  for (let cellNo = 2; cellNo <= nos; cellNo ++) {
 
     const cell = sheet.getCellByA1(`K${cellNo}`)
-    console.log(cell.value)
     const imageUrl = cell.value.toString().split("/")
     const response = await axios.request({
       method: "get",
@@ -52,6 +57,7 @@ if (!existsSync(imagesDir)) {
       writer.on("close", () => {
         const cCell = sheet.getCellByA1("L" + cellNo)
         cCell.value = "https://tools.nitroxis.com/images/images/" + imagePthToWrite + imageExt
+        bar.tick(1)
       })
     })(response, cellNo, imageUrl)
   }
