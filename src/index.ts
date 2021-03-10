@@ -29,7 +29,7 @@ if (!existsSync(imagesDir)) {
   console.log(sheet.rowCount)
   await sheet.loadCells("K2:K" + sheet.rowCount)
 
-  for (let cellNo = 2; cellNo <= 10; cellNo ++) {
+  for (let cellNo = 2; cellNo <= sheet.rowCount; cellNo ++) {
 
     const cell = sheet.getCellByA1(`K${cellNo}`)
     console.log(cell.value)
