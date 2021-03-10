@@ -28,31 +28,37 @@ if (!existsSync(imagesDir)) {
   console.log(sheet.title)
   console.log(sheet.rowCount)
   await sheet.loadCells("K2:K" + sheet.rowCount)
+  console.log("Loaded K:K Cells...")
+  await sheet.loadCells("L2:L" + sheet.rowCount)
+  console.log("Loaded L:L Cells...")
 
   for (let cellNo = 2; cellNo <= sheet.rowCount; cellNo ++) {
 
     const cell = sheet.getCellByA1(`K${cellNo}`)
     console.log(cell.value)
     const imageUrl = cell.value.toString().split("/")
-    axios.request({
+    const response = await axios.request({
       method: "get",
       url: cell.value.toString(),
       responseType: "stream"
-    }).then(((response) => {
+    });
 
-      ((response, cellNo, imageUrl) => {
-        const imagePthToWrite = uuid().toString()
-        const imageExt = extname(imageUrl.reverse()[0])
-        // `-${imagesDir}/${imageUrl[imageUrl.length - 1]}`
-        const writer = createWriteStream(`${imagesDir}/${imagePthToWrite}${imageExt}`)
-        response.data.pipe(writer)
-        writer.on("close", async () => {
-          await sheet.loadCells("L2:L" + sheet.rowCount)
-          const cCell = sheet.getCellByA1("L" + cellNo)
-          cCell.value = "https://tools.nitroxis.com/images/images/" + imagePthToWrite + imageExt
-          await cCell.save()
-        })
-      })(response, cellNo, imageUrl)
-    }))
+    ((response, cellNo, imageUrl) => {
+      const imagePthToWrite = uuid().toString()
+      const imageExt = extname(imageUrl.reverse()[0])
+      // `-${imagesDir}/${imageUrl[imageUrl.length - 1]}`
+      const writer = createWriteStream(`${imagesDir}/${imagePthToWrite}${imageExt}`)
+      response.data.pipe(writer)
+      writer.on("close", () => {
+        const cCell = sheet.getCellByA1("L" + cellNo)
+        cCell.value = "https://tools.nitroxis.com/images/images/" + imagePthToWrite + imageExt
+      })
+    })(response, cellNo, imageUrl)
   }
+
+  process.on("beforeExit", async () => {
+    await sheet.saveUpdatedCells()
+  })
+
 }())
+
