@@ -7,7 +7,7 @@ require("dotenv").config()
 import progress from "progress"
 
 const doc = new GoogleSpreadsheet(process.env.SHEET_KEY)
-const imagesDir = resolve(__dirname, "../images")
+const imagesDir = resolve(__dirname, "../dobuy-images")
 if (!existsSync(imagesDir)) {
   mkdirSync(imagesDir)
 }
@@ -37,6 +37,7 @@ if (!existsSync(imagesDir)) {
 
     const cell = sheet.getCellByA1(`K${cellNo}`)
     if (!cell.value) {
+      bar.tick(1)
       continue
     }
     const imageUrl = cell.value.toString().split("/")
@@ -54,7 +55,7 @@ if (!existsSync(imagesDir)) {
       response.data.pipe(writer)
       writer.on("close", () => {
         const cCell = sheet.getCellByA1("L" + cellNo)
-        cCell.value = "https://tools.nitroxis.com/images/images/" + imagePthToWrite + imageExt
+        cCell.value = "https://tools.nitroxis.com/images/dobuy-images/" + imagePthToWrite + imageExt
         bar.tick(1)
       })
     })(response, cellNo, imageUrl)
