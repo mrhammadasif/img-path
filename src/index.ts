@@ -5,10 +5,16 @@ import { resolve, extname } from "path"
 import { v4 as uuid } from "uuid"
 require("dotenv").config()
 import progress from "progress"
+import slugify from "slugify"
+import rmrf from "rmrf"
 
 const doc = new GoogleSpreadsheet(process.env.SHEET_KEY)
 const imagesDir = resolve(__dirname, "../dobuy-images")
 if (!existsSync(imagesDir)) {
+  mkdirSync(imagesDir)
+}
+else {
+  rmrf(imagesDir)
   mkdirSync(imagesDir)
 }
 (async function () {
@@ -23,19 +29,26 @@ if (!existsSync(imagesDir)) {
   const sheet = doc.sheetsByIndex[0] // or use doc.sheetsById[id] or doc.sheetsByTitle[title]
   console.log(sheet.title)
   console.log(sheet.rowCount)
-  await sheet.loadCells("K2:K" + sheet.rowCount)
-  console.log("Loaded K:K Cells...")
-  await sheet.loadCells("L2:L" + sheet.rowCount)
-  console.log("Loaded L:L Cells...")
 
   const nos = sheet.rowCount
+
+  await sheet.loadCells("B2:B" + nos)
+  console.log("Loaded B:B Cells...")
+  await sheet.loadCells("K2:K" + nos)
+  console.log("Loaded K:K Cells...")
+  await sheet.loadCells("L2:L" + nos)
+  console.log("Loaded L:L Cells...")
+
   const bar = new progress("processed :current out of :total images [:bar] total :percent elapsed::elapsed", {
     total: nos,
     curr: 1
   })
+
   for (let cellNo = 2; cellNo <= nos; cellNo ++) {
 
     const cell = sheet.getCellByA1(`K${cellNo}`)
+    const productName = sheet.getCellByA1(`B${cellNo}`)
+
     if (!cell.value) {
       bar.tick(1)
       continue
@@ -48,7 +61,11 @@ if (!existsSync(imagesDir)) {
     });
 
     ((response, cellNo, imageUrl) => {
-      const imagePthToWrite = uuid().toString()
+      // const imagePthToWrite = uuid().toString()
+      const imagePthToWrite = "dobuy-" + slugify(productName.value.toString(), {
+        strict: true,
+        lower: true
+      }) + "-nitroxis-" + new Date().getTime()
       const imageExt = extname(imageUrl.reverse()[0])
       // `-${imagesDir}/${imageUrl[imageUrl.length - 1]}`
       const writer = createWriteStream(`${imagesDir}/${imagePthToWrite}${imageExt}`)
@@ -56,6 +73,7 @@ if (!existsSync(imagesDir)) {
       writer.on("close", () => {
         const cCell = sheet.getCellByA1("L" + cellNo)
         cCell.value = "https://tools.nitroxis.com/images/dobuy-images/" + imagePthToWrite + imageExt
+        // cCell.value = imagePthToWrite + imageExt
         bar.tick(1)
       })
     })(response, cellNo, imageUrl)
